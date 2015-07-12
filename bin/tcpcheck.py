@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #Include networking, system, regular expressions, time and datetime
-import socket,sys,re,time,datetime
+import socket,sys,re,time,datetime,argparse,random
 
 
 #Make a new class to handle the socket state
@@ -10,7 +10,7 @@ class SocketState:
 	#This is the create method fo the class.  It expects a string like "host:port"
 	def __init__(self,host):
 		#RE to divide hostname and port
-		m=re.match("(.*?):(\d+)",sys.argv[1])
+		m=re.match("(.*?):(\d+)",host)
 		try:
 			#If we make it through here, we're defining host and port in the object
 			self.host=m.group(1)
@@ -35,6 +35,7 @@ class SocketState:
 			return 1
 		except socket.error:
 			return 0
+
 
 	#This method just makes a string to print the last status and how long it lasted.
 	def getprintchange(self,state,outage):
@@ -81,12 +82,15 @@ class SocketState:
 
 
 if __name__ == "__main__":
-	if len(sys.argv)<2:
-		print >> sys.stderr, "Usage: %s host:port [watch]"%(sys.argv[0])
-		sys.exit(1)
+	ap=argparse.ArgumentParser(description='Health validator',usage="Usage: %s [-w] [-p port] host"%(sys.argv[0]),)
+	ap.add_argument('-w','--watch',help="Watch Mode", action="store_true")
+	ap.add_argument('-p','--port',type=int,help="TCP Port",required=True)
+	ap.add_argument('host')
+	args=ap.parse_args()
 
-	s=SocketState(sys.argv[1])
-	if len(sys.argv)>2 and sys.argv[2] == "watch":
+	hostname="%s:%d"%(args.host,args.port)
+	s=SocketState(hostname)
+	if args.watch:
 		while True:
 			pstate=s.getstate()
 			s.tcpcheck()
